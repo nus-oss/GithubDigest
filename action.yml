@@ -29,8 +29,11 @@ runs:
         python-version: '3.11'
 
     - name: Install dependencies
-      run: pip install -r requirements.txt
+      run: pip install -r ${{ github.action_path }}/requirements.txt
       shell: bash
+
+    - name: Checkout code
+      uses: actions/checkout@v3.5.2
 
     - name: Run script
       env:
@@ -38,9 +41,7 @@ runs:
         GIT_TARGET_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
         DIGEST_SAVE_DIR: ${{ inputs.save }}
       run: |
-        python app.py
-        ls -la
-        ls .github/
+        python ${{ github.action_path }}/app.py
       shell: bash
 
     - name: Push changes if there are changes to the data file
