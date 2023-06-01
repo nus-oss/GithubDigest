@@ -40,7 +40,10 @@ runs:
         GIT_SECRET: ${{ inputs.secret }}
         GIT_TARGET_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
         DIGEST_SAVE_DIR: ${{ inputs.save }}
-      run: python app.py
+      run: |
+        python app.py
+        ls -la
+        ls .github/digests
       shell: bash
 
     - name: Push changes if there are changes to the data file
