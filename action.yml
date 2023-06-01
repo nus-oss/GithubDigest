@@ -1,0 +1,51 @@
+name: 'Github Issues Digest'
+
+description: 'Provide a summary of Github issues for a repository'
+
+inputs:
+  secret:
+    description: 'PAT or github token to use for authentication. Defaults to GITHUB_TOKEN'
+    required: false
+    default: ${{ secrets.GITHUB_TOKEN }}
+  repo:
+    description: 'Repository to monitor in the format of owner/repo, defaults to the current repository'
+    required: false
+    default: ${{ env.GITHUB_REPOSITORY }}
+  save:
+    description: 'directory to save the digest setting file, defaults to .github/digests'
+    required: false
+    default: ".github/digests"
+
+branding:
+  icon: 'align-justify'
+  color: 'blue'
+
+runs:
+  using: 'composite'
+
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3.5.2
+
+    - name: Setup Python
+      uses: actions/setup-python@v3.1.4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run script
+      env:
+        GIT_SECRET: ${{ inputs.secret }}
+        GIT_TARGET_REPO: ${{ inputs.repo }}
+        DIGEST_SAVE_DIR: ${{ inputs.save }}
+      run: python app.py
+
+    - name: Push changes if there are changes to the data file
+      run: |
+        git config --local user.email "github-digest-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-digest-actions[bot]"
+        git add -f ${{ inputs.save }}/digest.setting.json
+        git commit --allow-empty -m "Update digest setting"
+        git diff --quiet HEAD~ HEAD || git push
