@@ -1,5 +1,6 @@
 from os import environ
 from datetime import datetime
+import sys
 import helper
 import requests
 from string import Template
@@ -8,18 +9,36 @@ from graphql_query_templates import *
 try:
     API_KEY = environ["GIT_SECRET"]
 except KeyError:
-    API_KEY = "Token not available!"
+    print("Token not available!", file=sys.stderr)
+    exit(1)
 
 url = "https://api.github.com/graphql"
 headers = {
     "Authorization": f"token {API_KEY}",
 }
 
+def handle_errors(response: requests.Response) -> None:
+    """
+    If query fails, print the error message and exit the program
+    """
+    if response.status_code != 200:
+        print("Query failed to run by returning code of {}. {}".format(response.status_code, response.text), file=sys.stderr)
+        exit(1)
+
+    data = response.json()
+
+    if 'errors' in data:
+        errors = data["errors"]
+        for error in errors:
+            print("Error: {}".format(error["message"]), file=sys.stderr)
+        exit(1)
+
 def run_queries(queries: list[str]) -> dict:
     payload = {
         "query": f"{{{','.join([q for q in queries])}}}"
     }
     response = requests.post(url, json=payload, headers=headers)
+    handle_errors(response)
     return response.json()["data"]
 
 def run_mutations(queries: list[str]) -> dict:
@@ -28,6 +47,7 @@ def run_mutations(queries: list[str]) -> dict:
     }
 
     response = requests.post(url, json=payload, headers=headers)
+    handle_errors(response)
     return response.json()["data"]
 
 class GithubQuery:
@@ -46,6 +66,7 @@ class GithubQuery:
         }
 
         response = requests.post(url, json=payload, headers=headers)
+        handle_errors(response)
         return response.json()["data"]
 
     def partial_query(self, **kwargs) -> str:

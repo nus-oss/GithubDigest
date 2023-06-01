@@ -14,6 +14,10 @@ inputs:
     description: 'directory to save the digest setting file, defaults to .github/digests'
     required: false
     default: ".github/digests"
+  timezone:
+    description: 'Timezone to use for the digest, defaults to UTC'
+    required: false
+    default: "UTC"
 
 branding:
   icon: 'align-justify'
@@ -40,6 +44,7 @@ runs:
         GIT_SECRET: ${{ inputs.secret }}
         GIT_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
         DIGEST_SAVE_DIR: ${{ inputs.save }}
+        TIMEZONE: ${{ inputs.timezone }}
       run: |
         python ${{ github.action_path }}/app.py
       shell: bash
