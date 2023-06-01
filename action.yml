@@ -6,14 +6,17 @@ inputs:
   secret:
     description: 'PAT or github token to use for authentication. Defaults to GITHUB_TOKEN'
     required: false
+    shell: bash
     default: ${{ secrets.GITHUB_TOKEN }}
   repo:
     description: 'Repository to monitor in the format of owner/repo, defaults to the current repository'
     required: false
+    shell: bash
     default: ${{ env.GITHUB_REPOSITORY }}
   save:
     description: 'directory to save the digest setting file, defaults to .github/digests'
     required: false
+    shell: bash
     default: ".github/digests"
 
 branding:
