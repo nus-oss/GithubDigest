@@ -43,7 +43,7 @@ runs:
       run: |
         python app.py
         ls -la
-        ls .github/digests
+        ls .github/
       shell: bash
 
     - name: Push changes if there are changes to the data file
