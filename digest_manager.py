@@ -21,8 +21,8 @@ Subscribe to this issue to receive a digest of all the issues in this repository
 
 class DigestManager:
     cursor:str = None
-    owner: str
-    repo: str
+    target_repo: str
+    local_repo: str
     timestamp: datetime
     target_issue: str
     complete: bool
@@ -30,9 +30,9 @@ class DigestManager:
     last_update_time: datetime
     query = MainQuery()
 
-    def __init__(self, owner:str, repo:str, target_issue:str, ignore_numbers=[]) -> None:
-        self.owner = owner
-        self.repo = repo
+    def __init__(self, target_repo:str, local_repo:str, target_issue:str, ignore_numbers=[]) -> None:
+        self.target_repo = target_repo
+        self.local_repo = local_repo
         self.target_issue = target_issue
         self.complete = False
         self.ignore_numbers = ignore_numbers
@@ -40,15 +40,11 @@ class DigestManager:
         self.create_issue()
         self.update_last_change_date()
 
-    @property
-    def repo_repr(self) -> str:
-        return f"{self.owner}/{self.repo}"
-
     def run_query(self, additional_queries: list[str] = []) -> dict:
         if not self.complete:
             additional_queries.append(
                 self.query.partial_query(
-                    self.repo_repr,
+                    self.target_repo,
                     self.last_update_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
                     self.cursor)
             )
@@ -94,8 +90,9 @@ class DigestManager:
         run_mutations([r1, r2])
 
     def find_repo_id(self) -> str:
+        owner, repo = self.local_repo.split("/")
         q = FindRepoId("find_repo_id")
-        res = q.run(owner=self.owner, repo=self.repo)
+        res = q.run(owner=owner, repo=repo)
 
         return q.get_repo_id(res)
     
@@ -112,5 +109,5 @@ class DigestManager:
         q = CreateIssue("create_issue")
         res = q.run(repo_id=repo_id, title="Issues Digest", body=digest_content)
         self.target_issue = q.get_issue_id(res)
-        self.ignore_numbers.append(q.get_issue_number(res))
-
+        if self.local_repo != self.target_repo:
+            self.ignore_numbers.append(q.get_issue_number(res))

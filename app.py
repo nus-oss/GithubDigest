@@ -11,12 +11,11 @@ if digest_dir[-1] != "/":
 
 savefile = digest_dir + "digest.setting.json"
 def create_digest_setting():
-    owner, repo = curr_repo.split("/")
     os.makedirs(digest_dir, exist_ok=True)
     with open(savefile, 'w') as f:
         json.dump({
-            "owner": owner,
-            "repo": repo,
+            "target_repo": lookup_repo,
+            "my_repo": curr_repo,
             "target_issue": "",
             "ignore_list": []
         }, f, indent=4)
@@ -33,8 +32,8 @@ with open(savefile, 'r') as f:
             setting = json.load(f)
 
 ql = DigestManager(
-    setting["owner"],
-    setting["repo"],
+    setting["target_repo"],
+    setting["my_repo"],
     setting["target_issue"],
     ignore_numbers=setting["ignore_list"]
     )
