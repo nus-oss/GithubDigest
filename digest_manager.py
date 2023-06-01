@@ -80,8 +80,8 @@ class DigestManager:
     def send_data(self, issues: list[GitIssue]):
         r1 = UpdateIssue("update_issue").partial_query(self.target_issue, digest_content)
         r2 = AddComment("new_digest").partial_query(self.target_issue, digest_header.format(
-                    time_start=self.last_update_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    time_end=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    time_start=helper.format_date(self.last_update_time),
+                    time_end=helper.format_date(datetime.now()),
                     all_changes=sum([issue.total_changes for issue in issues]),
                     issues_changed=len(issues),
                     body='\n'.join([issue.to_markdown() for issue in issues])

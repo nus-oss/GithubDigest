@@ -4,3 +4,4 @@ charset-normalizer==3.1.0
 idna==3.4
 requests==2.28.2
 urllib3==1.26.15
+pytz==2023.3

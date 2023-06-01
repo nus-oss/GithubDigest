@@ -1,8 +1,16 @@
 from datetime import datetime, timedelta
+import pytz
+from os import environ
 
-convertToDateTime = lambda x: datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ")
+utc = pytz.utc
+localtz = pytz.timezone(environ["TIMEZONE"])
 
-format_date = lambda x: x.strftime("%Y-%m-%d %H:%M:%S")
+def convertToDateTime(x: str) -> datetime:
+    dt = datetime.strptime(x, "%Y-%m-%dT%H:%M:%SZ")
+    return dt.replace(tzinfo=utc)
+
+def format_date(dt: datetime) -> str:
+    return dt.astimezone(localtz).strftime("%Y-%m-%d %H:%M:%S")
 
 def trim_and_format(x: str) -> str:
     if len(x) > 200:
@@ -10,4 +18,4 @@ def trim_and_format(x: str) -> str:
     return ">" + x.strip().replace("\n", "\n> ")
 
 def get_n_day_prior(n: int) -> datetime:
-    return datetime.now() - timedelta(days=n)
+    return datetime.now(utc) - timedelta(days=n)
