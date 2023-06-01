@@ -36,7 +36,7 @@ class DigestManager:
         self.target_issue = target_issue
         self.complete = False
         self.ignore_numbers = ignore_numbers
-        self.last_update_time = datetime.now() - timedelta(days=1)
+        self.last_update_time = helper.get_now() - timedelta(days=1)
         self.create_issue()
         self.update_last_change_date()
 
@@ -45,7 +45,7 @@ class DigestManager:
             additional_queries.append(
                 self.query.partial_query(
                     self.target_repo,
-                    self.last_update_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    helper.format_to_utc(self.last_update_time),
                     self.cursor)
             )
         res = run_queries(additional_queries)
@@ -66,7 +66,7 @@ class DigestManager:
                         ret[key].read_paginated_comments(ret[key].comments_query.read_result(res))
         
         return [ret[key] for key in ret]
-    
+
     def update_cursor(self, graphqlResult: dict):
         self.cursor = graphqlResult["endCursor"]
         self.complete = not graphqlResult["hasNextPage"]
@@ -74,14 +74,14 @@ class DigestManager:
     def convert_data(self, graphqlResult: dict, ret: dict[str, GitIssue]):
         for raw_issue in graphqlResult:
             if (raw_issue and raw_issue["number"] not in self.ignore_numbers):
-                issue = GitIssue(raw_issue, (self.last_update_time, datetime.now()))
+                issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
                 ret[issue.id] = issue
     
     def send_data(self, issues: list[GitIssue]):
         r1 = UpdateIssue("update_issue").partial_query(self.target_issue, digest_content)
         r2 = AddComment("new_digest").partial_query(self.target_issue, digest_header.format(
-                    time_start=self.last_update_time.strftime("%Y-%m-%d %H:%M:%S"),
-                    time_end=datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    time_start=helper.format_local(self.last_update_time),
+                    time_end=helper.format_local(helper.get_now()),
                     all_changes=sum([issue.total_changes for issue in issues]),
                     issues_changed=len(issues),
                     body='\n'.join([issue.to_markdown() for issue in issues])

@@ -59,7 +59,7 @@ class GitComment(ModifiableItem):
         return comment_template.format(
                 author=self.last_change_author,
                 link=self.source_link,
-                date=helper.format_date(self.last_change_date),
+                date=helper.format_local(self.last_change_date),
                 body=helper.trim_and_format(self.body),
                 status=self.get_status_str(self.time_range)
             )
@@ -111,7 +111,7 @@ class GitIssue(ModifiableItem):
             temp = issue_template
             header += temp.format(
                 author=self.last_change_author,
-                date=helper.format_date(self.last_change_date),
+                date=helper.format_local(self.last_change_date),
                 status=self.get_status_str(self.time_range),
                 body=helper.trim_and_format(self.body)
             )
