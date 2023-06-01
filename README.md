@@ -10,6 +10,10 @@ The changes reflected in the digest will be the last comment by the digest to th
 - Added timezone support
 # Usage
 
+As Github Digester will create issues and add comments, it is important to enable read/write access to GITHUB_TOKENs
+if you are not planning to use PAT. 
+You can enable it in `Settings` -> `Actions` -> `General` -> `Workflow permissions`.
+
 To use this action in your workflow, you can add the following step:
 
 ```yaml
