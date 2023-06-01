@@ -38,7 +38,7 @@ runs:
     - name: Run script
       env:
         GIT_SECRET: ${{ inputs.secret }}
-        GIT_TARGET_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
+        GIT_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
         DIGEST_SAVE_DIR: ${{ inputs.save }}
       run: |
         python ${{ github.action_path }}/app.py

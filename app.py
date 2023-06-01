@@ -2,9 +2,8 @@ import json
 from digest_manager import DigestManager
 import os
 
-save_repo = os.environ["GIT_REPO"]
-lookup_repo = os.environ["GIT_TARGET_REPO"]
-digest_dir = os.environ["INPUT_DIGEST-DIR"]
+lookup_repo = os.environ["GIT_REPO"]
+digest_dir = os.environ["DIGEST_SAVE_DIR"]
 curr_repo = os.environ["GITHUB_REPOSITORY"]
 
 if digest_dir[-1] != "/":
