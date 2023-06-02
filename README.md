@@ -11,8 +11,11 @@ The changes reflected in the digest will be the last comment by the digest to th
 # Usage
 
 As Github Digester will create issues and add comments, it is important to enable read/write access to GITHUB_TOKENs
-if you are not planning to use PAT. 
+if you are not planning to use PAT.
+
 You can enable it in `Settings` -> `Actions` -> `General` -> `Workflow permissions`.
+
+ 
 
 To use this action in your workflow, you can add the following step:
 
@@ -21,13 +24,43 @@ steps:
   - name: Create digest
     uses: Eclipse-Dominator/Github_Digest@v0.1.6c-alpha
     with:
-      secret: PAT/Github Token (default to secrets.GITHUB_TOKEN)
-      repo: repository to monitor (default to the current repo)
-      save: folder where digest settings are saved (defaut to .github/digests)
-      timezone: country/regional representation of the local timezone (defaults to utc)
+      secret: <github token> # default to secrets.GITHUB_TOKEN
+      repo: <owner>/<repo> # repository to monitor, default to the current repo
+      save: <save foler path> # save folder of the digest data, defaut to .github/digests
+      timezone: "<tz identifier>" # set the timezone of the displayed time, defaults to utc
 ```
 
-To run the action daily or on manually, you can add the following action:
+## Tips 
+
+- By default, the users creating the issue and commenting the issue is `github-actions [bot]`, this can be customised to a custom account by feeding a custom PAT to secret.
+
+- You can monitor another repository by feeding a custom repo to the repo input.
+
+- You can obtain a list of `tz identifier` [here](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)
+
+# Sample Workflow files
+Below are some sample workflow that can be added to `.github/workflows` that you can use/reference to use the actions.
+
+Minimal sample to run digest (UTC timezone)
+---
+```yaml
+name: Issue Digest
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # runs once at 00:00 daily
+
+jobs:
+  issue-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run Issue Digest Action
+        uses: Eclipse-Dominator/Github_Digest@v0.1.6c-alpha
+```
+
+Add digest to your current repository in a different timezone
+---
 ```yaml
 name: Issue Digest
 
@@ -43,4 +76,49 @@ jobs:
     steps:
       - name: Run Issue Digest Action
         uses: Eclipse-Dominator/Github_Digest@v0.1.6c-alpha
+          with:
+            timezome: "Singapore"
+```
+
+Add digest to monitor issues in another repository
+---
+```yaml
+name: Issue Digest
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # runs once at 00:00 daily
+  workflow_dispatch:
+
+jobs:
+  issue-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run Issue Digest Action
+        uses: Eclipse-Dominator/Github_Digest@v0.1.6c-alpha
+          with:
+            repo: "some_owner/some_repo"
+            timezome: "Singapore"
+```
+
+Add digest with your own custom PAT token
+---
+```yaml
+name: Issue Digest
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # runs once at 00:00 daily
+  workflow_dispatch:
+
+jobs:
+  issue-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Run Issue Digest Action
+        uses: Eclipse-Dominator/Github_Digest@v0.1.6c-alpha
+          with:
+            secret: ${{ secrets.YOUR_SECRET_TOKEN }}
 ```
