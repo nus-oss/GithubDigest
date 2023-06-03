@@ -78,11 +78,16 @@ class DigestManager:
                 ret[issue.id] = issue
     
     def send_data(self, issues: list[GitIssue]):
+        total_changes = sum([issue.total_changes for issue in issues])
+        if total_changes == 0:
+            # no changes were detected
+            return
+
         r1 = UpdateIssue("update_issue").partial_query(self.target_issue, digest_content)
         r2 = AddComment("new_digest").partial_query(self.target_issue, digest_header.format(
                     time_start=helper.format_local(self.last_update_time),
                     time_end=helper.format_local(helper.get_now()),
-                    all_changes=sum([issue.total_changes for issue in issues]),
+                    all_changes=total_changes,
                     issues_changed=len(issues),
                     body='\n'.join([issue.to_markdown() for issue in issues])
                 ))
