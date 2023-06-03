@@ -113,8 +113,7 @@ class DigestManager:
         repo_id = self.find_repo_id()
         q = CreateIssue("create_issue")
         res = q.run(repo_id=repo_id, title="Issues Digest", body=digest_content)
-        print(repo_id)
-        print(res)
+
         self.target_issue = q.get_issue_id(res)
-        if self.local_repo != self.target_repo:
+        if self.local_repo == self.target_repo:
             self.ignore_numbers.append(q.get_issue_number(res))

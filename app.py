@@ -20,7 +20,7 @@ def create_digest_setting():
             "ignore_list": []
         }, f, indent=4)
 
-if not os.path.exists("./digest.setting.json"):
+if not os.path.exists(savefile):
     create_digest_setting()
 
 with open(savefile, 'r') as f:
@@ -28,7 +28,7 @@ with open(savefile, 'r') as f:
         setting = json.load(f)
     except json.decoder.JSONDecodeError:
         create_digest_setting()
-        with open("digest.setting.json", 'r') as f:
+        with open(savefile, 'r') as f:
             setting = json.load(f)
 
 ql = DigestManager(
