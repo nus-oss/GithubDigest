@@ -78,6 +78,7 @@ class DigestManager:
                 ret[issue.id] = issue
     
     def send_data(self, issues: list[GitIssue]):
+        issues = [issue for issue in issues if issue.total_changes > 0]
         total_changes = sum([issue.total_changes for issue in issues])
         if total_changes == 0:
             # no changes were detected
