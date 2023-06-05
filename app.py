@@ -2,7 +2,7 @@ import json
 from digest_manager import DigestManager
 import os
 
-required_setting_fields = ["target_issue", "ignore_list"]
+required_setting_fields = ["digest_issue", "ignored_issues"]
 
 lookup_repo = os.environ["GIT_REPO"]
 digest_dir = os.environ["DIGEST_SAVE_DIR"]
@@ -16,8 +16,8 @@ def create_digest_setting():
     os.makedirs(digest_dir, exist_ok=True)
     with open(savefile, 'w') as f:
         json.dump({
-            "target_issue": "",
-            "ignore_list": []
+            "digest_issue": "",
+            "ignored_issues": []
         }, f, indent=4)
 
 if not os.path.exists(savefile):
@@ -41,15 +41,15 @@ with open(savefile, 'r') as f:
 ql = DigestManager(
     lookup_repo,
     curr_repo,
-    setting["target_issue"],
-    ignore_numbers=setting["ignore_list"]
+    setting["digest_issue"],
+    ignored_issues=setting["ignored_issues"]
     )
 
 issues = ql.get_result()
 ql.send_data(issues)
 
-setting["target_issue"] = ql.target_issue
-setting["ignore_list"] = ql.ignore_numbers
+setting["digest_issue"] = ql.digest_issue
+setting["ignored_issues"] = ql.ignored_issues
 
 with open(savefile, 'w') as f:
     json.dump(setting, f, indent=4)
