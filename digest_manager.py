@@ -12,7 +12,7 @@ digest_header = """<details>
 
 {body}
 
-</summary>
+</details>
 """
 
 digest_content = """
