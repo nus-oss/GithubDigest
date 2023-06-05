@@ -9,6 +9,7 @@ inputs:
     required: false
   repo:
     description: 'Repository to monitor in the format of owner/repo, defaults to the current repository'
+    default: ${{ github.repository }}
     required: false
   save:
     description: 'directory to save the digest setting file, defaults to .github/digests'
@@ -42,7 +43,7 @@ runs:
     - name: Run script
       env:
         GIT_SECRET: ${{ inputs.secret }}
-        GIT_REPO: ${{ inputs.repo || env.GITHUB_REPOSITORY }}
+        GIT_REPO: ${{ inputs.repo }}
         DIGEST_SAVE_DIR: ${{ inputs.save }}
         TIMEZONE: ${{ inputs.timezone }}
       run: |
