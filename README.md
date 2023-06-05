@@ -26,7 +26,7 @@ steps:
     with:
       secret: <github token> # default to secrets.GITHUB_TOKEN
       repo: <owner>/<repo> # repository to monitor, default to the current repo
-      save: <save foler path> # save folder of the digest data, defaut to .github/digests
+      save: <save folder path> # save folder of the digest data, defaut to .github/digests
       timezone: "<tz identifier>" # set the timezone of the displayed time, defaults to utc
 ```
 
