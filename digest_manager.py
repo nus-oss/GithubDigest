@@ -27,25 +27,25 @@ class DigestManager:
     args:
         target_repo: str - the repository to query for issues
         local_repo: str - the repository to send the digest to
-        target_issue: str - the issue to send the digest to
-        ignore_numbers: list[int] - a list of issue numbers to ignore, default to nothing
+        digest_issue: str - the issue to send the digest to
+        ignored_issues: list[int] - a list of issue numbers to ignore, default to nothing
     """
     cursor:str = None
     target_repo: str
     local_repo: str
     timestamp: datetime
-    target_issue: str
+    digest_issue: str
     complete: bool
-    ignore_numbers: list[int]
+    ignored_issues: list[int]
     last_update_time: datetime
     query = MainQuery()
 
-    def __init__(self, target_repo:str, local_repo:str, target_issue:str, ignore_numbers=[]) -> None:
+    def __init__(self, target_repo:str, local_repo:str, digest_issue:str, ignored_issues=[]) -> None:
         self.target_repo = target_repo
         self.local_repo = local_repo
-        self.target_issue = target_issue
+        self.digest_issue = digest_issue
         self.complete = False
-        self.ignore_numbers = ignore_numbers
+        self.ignored_issues = ignored_issues
         self.create_issue()
         self.update_last_change_date()
 
@@ -114,7 +114,7 @@ class DigestManager:
                 continue
             
             issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
-            if issue.number in self.ignore_numbers or issue.id == self.target_issue:
+            if issue.number in self.ignored_issues or issue.id == self.digest_issue:
                 # ignore the target issue and the issues in the ignore list
                 continue
 
@@ -134,8 +134,8 @@ class DigestManager:
             # no changes were detected
             return
 
-        r1 = UpdateIssue("update_issue").partial_query(self.target_issue, digest_content)
-        r2 = AddComment("new_digest").partial_query(self.target_issue, digest_header.format(
+        r1 = UpdateIssue("update_issue").partial_query(self.digest_issue, digest_content)
+        r2 = AddComment("new_digest").partial_query(self.digest_issue, digest_header.format(
                     time_start=helper.format_local(self.last_update_time),
                     time_end=helper.format_local(helper.get_now()),
                     all_changes=total_changes,
@@ -163,7 +163,7 @@ class DigestManager:
         be 3 days prior to the current time.
         """
         q = ReadLastCommentDate("read_last_comment")
-        res = q.run(issue_id=self.target_issue)
+        res = q.run(issue_id=self.digest_issue)
         self.last_update_time = q.get_last_comment_date(res) or helper.get_n_day_prior(3)
 
     def create_issue(self):
@@ -171,13 +171,13 @@ class DigestManager:
         create_issue creates the digest issue if it does not exist and update the target_issue field.
         If the target repo is the same as the local repo, then the issue number is added to the ignore list.
         """
-        if self.target_issue:
+        if self.digest_issue:
             # issue already exist
             return
         repo_id = self.find_repo_id()
         q = CreateIssue("create_issue")
         res = q.run(repo_id=repo_id, title="Issues Digest", body=digest_content)
 
-        self.target_issue = q.get_issue_id(res)
+        self.digest_issue = q.get_issue_id(res)
         if self.local_repo == self.target_repo:
-            self.ignore_numbers.append(q.get_issue_number(res))
+            self.ignored_issues.append(q.get_issue_number(res))
