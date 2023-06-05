@@ -5,14 +5,14 @@ import helper
 issue_title_template = "# {title} [#{number}]({link})\n"
 
 issue_template = """
-`{author}` {status} this issue on {date}
+`@{author}` {status} this issue on {date}
 {body}
 
 
 """
 
 comment_template = """
-`{author}` {status} this [comment]({link}) on {date}
+`@{author}` {status} this [comment]({link}) on {date}
 {body}
 
 """
