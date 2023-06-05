@@ -6,8 +6,7 @@ import helper
 digest_header = """<details>
 <summary>
 <h2>Digest Summary: {time_end}</h2>
-<p>Tracked {all_changes} changes across {issues_changed} issues</p>
-<p>From {time_start} to {time_end}</p>
+<p>... contains {all_changes} changes across {issues_changed} issues, since {time_start}</p>
 </summary>
 
 {body}
