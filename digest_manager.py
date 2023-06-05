@@ -20,6 +20,16 @@ Subscribe to this issue to receive a digest of all the issues in this repository
 """
 
 class DigestManager:
+    """
+    DigestManager is a class that manages the digest process.
+    It is responsible for querying for issues and comments, as well as sending the digest to the target repository.
+
+    args:
+        target_repo: str - the repository to query for issues
+        local_repo: str - the repository to send the digest to
+        target_issue: str - the issue to send the digest to
+        ignore_numbers: list[int] - a list of issue numbers to ignore, default to nothing
+    """
     cursor:str = None
     target_repo: str
     local_repo: str
@@ -36,11 +46,17 @@ class DigestManager:
         self.target_issue = target_issue
         self.complete = False
         self.ignore_numbers = ignore_numbers
-        self.last_update_time = helper.get_now() - timedelta(days=1)
         self.create_issue()
         self.update_last_change_date()
 
     def run_query(self, additional_queries: list[str] = []) -> dict:
+        """
+        run_query runs the main query to query for issues if the pagination of the main query is not complete.
+        It will also run additional queries if provided. The additional queries are expected to be partial queries.
+
+        args:
+            additional_queries: list[str] - a list of additional queries to run
+        """
         if not self.complete:
             additional_queries.append(
                 self.query.partial_query(
@@ -52,6 +68,13 @@ class DigestManager:
         return res
     
     def get_result(self) -> list[GitIssue]:
+        """
+        get_result is a runs the main query to query for issues as well as fetch comments for each issue
+        until all comments of each issue is fetched.
+
+        returns:
+            list[GitIssue] - a list of GitIssue objects
+        """ 
         ret: dict[str, GitIssue] = {}
         extra = []
         while not self.complete or (extra := [ret[key].draft_gql_query() for key in ret if ret[key].has_more_data]):
@@ -68,16 +91,37 @@ class DigestManager:
         return [ret[key] for key in ret]
 
     def update_cursor(self, graphqlResult: dict):
+        """
+        update_cursor updates the cursor and complete flag based on the pageInfo of the main query.
+
+        args:
+            graphqlResult: dict - the result of the main query
+        """
         self.cursor = graphqlResult["endCursor"]
         self.complete = not graphqlResult["hasNextPage"]
     
     def convert_data(self, graphqlResult: dict, ret: dict[str, GitIssue]):
+        """
+        convert_data converts the graphql result into GitIssue objects and stores them in the ret dictionary
+        with the issue id as the key.
+
+        args:
+            graphqlResult: dict - the result of the main query
+            ret: dict[str, GitIssue] - the dictionary to store the GitIssue objects, this will be mutated in place
+        """
         for raw_issue in graphqlResult:
             if (raw_issue and raw_issue["number"] not in self.ignore_numbers):
                 issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
                 ret[issue.id] = issue
     
     def send_data(self, issues: list[GitIssue]):
+        """
+        send_data sends mutation to update the digest issue with the new data.
+        It takes in a list of GitIssue objects and only sends the data if there are changes.
+
+        args:
+            issues: list[GitIssue] - a list of GitIssue objects
+        """
         issues = [issue for issue in issues if issue.total_changes > 0]
         total_changes = sum([issue.total_changes for issue in issues])
         if total_changes == 0:
@@ -96,6 +140,9 @@ class DigestManager:
         run_mutations([r1, r2])
 
     def find_repo_id(self) -> str:
+        """
+        find_repo_id finds the repo id of the target repo.
+        """
         owner, repo = self.local_repo.split("/")
         q = FindRepoId("find_repo_id")
         res = q.run(owner=owner, repo=repo)
@@ -103,11 +150,21 @@ class DigestManager:
         return q.get_repo_id(res)
     
     def update_last_change_date(self):
+        """
+        update_last_change_date updates the last update time of the digest issue based on the last comment date.
+
+        By default, if there are no comments in the digest issue, the last update time will
+        be 3 days prior to the current time.
+        """
         q = ReadLastCommentDate("read_last_comment")
         res = q.run(issue_id=self.target_issue)
         self.last_update_time = q.get_last_comment_date(res) or helper.get_n_day_prior(3)
 
     def create_issue(self):
+        """
+        create_issue creates the digest issue if it does not exist and update the target_issue field.
+        If the target repo is the same as the local repo, then the issue number is added to the ignore list.
+        """
         if self.target_issue:
             # issue already exist
             return

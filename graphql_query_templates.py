@@ -1,5 +1,7 @@
 from string import Template
 
+# The following templates are used to generate the GraphQL queries.
+
 add_comment_template = Template("""
 addComment(input: { subjectId: "$issue_id", body: "$comment_body" }) {
   commentEdge {
