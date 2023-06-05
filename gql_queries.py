@@ -20,6 +20,9 @@ headers = {
 def handle_errors(response: requests.Response) -> None:
     """
     If query fails, print the error message and exit the program
+
+    args:
+        response: requests.Response - the response object
     """
     if response.status_code != 200:
         print("Query failed to run by returning code of {}. {}".format(response.status_code, response.text), file=sys.stderr)
@@ -34,6 +37,15 @@ def handle_errors(response: requests.Response) -> None:
         exit(1)
 
 def run_queries(queries: list[str]) -> dict:
+    """
+    Run a list of GraphQL queries to Github
+
+    args:
+        queries: list[str] - the list of queries to run
+    
+    returns:
+        dict - the result of the query
+    """
     payload = {
         "query": f"{{{','.join([q for q in queries])}}}"
     }
@@ -42,6 +54,15 @@ def run_queries(queries: list[str]) -> dict:
     return response.json()["data"]
 
 def run_mutations(queries: list[str]) -> dict:
+    """
+    Run a list of GraphQL mutations to Github
+
+    args:
+        queries: list[str] - the list of mutations to run
+    
+    returns:
+        dict - the result of the mutation
+    """
     payload = {
         "query": f"mutation {{{','.join([q for q in queries])}}}"
     }
@@ -51,6 +72,14 @@ def run_mutations(queries: list[str]) -> dict:
     return response.json()["data"]
 
 class GithubQuery:
+    """
+    GithubQuery is a base class representing a GraphQL query to Github
+
+    args:
+        query: Template - the query template
+        id: str - the id of the query
+        mutation: bool - whether the query is a mutation
+    """
     query: Template
     id: str
     mutation: bool
@@ -61,6 +90,12 @@ class GithubQuery:
         self.mutation = mutation
 
     def run(self, **kwargs) -> dict:
+        """
+        run runs the query with the given arguments
+
+        args:
+            kwargs: dict - the arguments to substitute into the query string
+        """
         payload = {
             "query": f"{'mutation ' if self.mutation else ''}{{{self.partial_query(**kwargs)}}}"
         }
@@ -70,165 +105,183 @@ class GithubQuery:
         return response.json()["data"]
 
     def partial_query(self, **kwargs) -> str:
+        """
+        partial_query returns a partial GraphQL query string with the given arguments substituted in
+
+        args:
+            kwargs: dict - the arguments to substitute into the query string
+        """
         return f"{self.id}:{self.query.substitute(**kwargs)}"
     
     def read_result(self, graphql_result: dict) -> dict:
+        """
+        read_result reads the result of the query and returns the result of the query corresponding to the id
+        of this query.
+
+        args:
+            graphql_result: dict - the result of the query
+
+        returns:
+            dict - the result of the query corresponding to the id of this query
+        """
         return graphql_result[self.id]
 
 
 class AddComment(GithubQuery):
+    """
+    AddComment represents a GraphQL mutation to add a comment to an issue
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(add_comment_template, id, mutation=True)
 
-    """
-    :param issue_id: The ID of the issue to add a comment to
-    :param comment_body: The body of the comment to add
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, issue_id:str, comment_body:str) -> str:
         return super().partial_query(issue_id=issue_id, comment_body=comment_body)
     
-    """
-    :param issue_id: The ID of the issue to add a comment to
-    :param comment_body: The body of the comment to add
-    :return: graphquery result
-    """
     def run(self, issue_id:str, comment_body:str) -> dict:
         return super().run(issue_id=issue_id, comment_body=comment_body)
 
 class CreateIssue(GithubQuery):
+    """
+    CreateIssue represents a GraphQL mutation to create an issue
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(create_issue_template, id, mutation=True)
 
-    """
-    :param repo_id: The ID of the repo to create an issue in
-    :param title: The title of the issue to create
-    :param body: The body of the issue to create
-    :return: A partial GraphQL query string
-    """
+
     def partial_query(self, repo_id:str, title:str, body:str) -> str:
         return super().partial_query(repo_id=repo_id, title=title, body=body)
     
-    """
-    :param repo_id: The ID of the repo to create an issue in
-    :param title: The title of the issue to create
-    :param body: The body of the issue to create
-    :return: graphquery result
-    """
     def run(self, repo_id:str, title:str, body:str) -> dict:
         return super().run(repo_id=repo_id, title=title, body=body)
     
     def get_issue_id(self, graphqlResult: dict) -> str:
+        """
+        get_issue_id returns the id of the issue created by this mutation
+
+        args:
+            graphqlResult: dict - the result of the query
+
+        returns:
+            str - the id of the issue created by this mutation
+        """
         return self.read_result(graphqlResult)["issue"]["id"]
     
     def get_issue_number(self, graphqlResult: dict) -> int:
+        """
+        get_issue_number returns the issue number created by this mutation
+
+        args:
+            graphqlResult: dict - the result of the query
+
+        returns:
+            int - the issue number created by this mutation
+        """
         return self.read_result(graphqlResult)["issue"]["number"]
     
 class UpdateIssue(GithubQuery):
+    """
+    UpdateIssue represents a GraphQL mutation to update the body of an issue
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(update_issue_template, id)
 
-    """
-    :param issue_id: The ID of the issue to update
-    :param issue_body: The body of the issue to update
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, issue_id:str, issue_body:str) -> str:
         return super().partial_query(issue_id=issue_id, issue_body=issue_body)
     
-    """
-    :param issue_id: The ID of the issue to update
-    :param issue_body: The body of the issue to update
-    :return: graphquery result
-    """
     def run(self, issue_id:str, issue_body:str) -> dict:
         return super().run(issue_id=issue_id, issue_body=issue_body)
 
 class FindRepoId(GithubQuery):
+    """
+    FindRepoId represents a GraphQL query to find the id of a repository
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(find_repo_id_template, id)
 
-    """
-    :param owner: The owner of the repo to find
-    :param repo: The name of the repo to find
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, owner:str, repo:str) -> str:
         return super().partial_query(owner=owner, repo=repo)
     
-    """
-    :param owner: The owner of the repo to find
-    :param repo: The name of the repo to find
-    :return: graphquery result
-    """
     def run(self, owner:str, repo:str) -> dict:
         return super().run(owner=owner, repo=repo)
     
-    """
-    returns the id of the repository of a FindRepoId query
-    :param graphqlResult: The result of the graphquery
-    """
     def get_repo_id(self, graphqlResult: dict) -> str:
+        """
+        get_repo_id returns the id of the repository
+
+        args:
+            graphqlResult: dict - the result of the query
+
+        returns:
+            str - the id of the repository
+        """
         return self.read_result(graphqlResult)["id"]
     
 class ReadLastCommentDate(GithubQuery):
+    """
+    ReadLastCommentDate represents a GraphQL query to read the date of the last comment on an issue
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(read_last_comment_template, id)
 
-    """
-    :param issue_id: The ID of the issue to read
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, issue_id: str) -> str:
         return super().partial_query(issue_id=issue_id)
     
-    """
-    :param issue_id: The ID of the issue to read
-    :return: graphquery result
-    """
     def run(self, issue_id:str) -> dict:
         return super().run(issue_id=issue_id)
     
-    """
-    returns the last comment date of a ReadLastCommentDate query
-    :param graphqlResult: The result of the graphquery
-    """
     def get_last_comment_date(self, graphqlResult: dict) -> datetime | None:
+        """
+        get_last_comment_date returns the date of the last comment on the issue, or None if there are no comments
+
+        args:
+            graphqlResult: dict - the result of the query
+
+        returns:
+            datetime | None - the date of the last comment on the issue, or None if there are no comments
+        """
         comments = super().read_result(graphqlResult)["comments"]["nodes"]
         if len(comments):
             return helper.convertToDateTime(comments[-1]["createdAt"])
         return None
     
 class ReadComments(GithubQuery):
+    """
+    ReadComments represents a GraphQL query to read the comments on an issue
+
+    args:
+        id: str - the id of the query
+    """
     def __init__(self, id: str):
         super().__init__(read_comments_template, id)
     
-    """
-    :param issue_id: The ID of the issue to read
-    :param cursor: The cursor to read from
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, url: str, cursor: str) -> str:
         return super().partial_query(url=url, cursor=cursor)
     
-    """
-    :param issue_id: The ID of the issue to read
-    :param cursor: The cursor to read from
-    :return: graphquery result
-    """
     def run(self, url: str, cursor: str) -> str:
         return super().run(url=url, cursor=cursor)
 
 class MainQuery(GithubQuery):
+    """
+    MainQuery represents a GraphQL query to read the issues in a repository based on update time range
+    """
     def __init__(self):
         super().__init__(main_query_template, "main")
 
-    """
-    :param repo: The name of the repo to query
-    :param timestamp: The timestamp to query from
-    :param cursor: The cursor to query from
-    :return: A partial GraphQL query string
-    """
     def partial_query(self, repo: str, timestamp: str, cursor: str = None) -> str:
         if not cursor:
             cursor = "null"
@@ -236,12 +289,6 @@ class MainQuery(GithubQuery):
             cursor = f'"{cursor}"'
         return super().partial_query(repo=repo, timestamp=timestamp, cursor=cursor)
     
-    """
-    :param repo: The name of the repo to query
-    :param timestamp: The timestamp to query from
-    :param cursor: The cursor to query from
-    :return: graphquery result
-    """
     def run(self, repo: str, timestamp: str, cursor: str = None) -> str:
         return super().run(repo=repo, timestamp=timestamp, cursor=cursor)
     
