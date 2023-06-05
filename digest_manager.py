@@ -110,9 +110,15 @@ class DigestManager:
             ret: dict[str, GitIssue] - the dictionary to store the GitIssue objects, this will be mutated in place
         """
         for raw_issue in graphqlResult:
-            if (raw_issue and raw_issue["number"] not in self.ignore_numbers):
-                issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
-                ret[issue.id] = issue
+            if not raw_issue: 
+                continue
+            
+            issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
+            if issue.number in self.ignore_numbers or issue.id == self.target_issue:
+                # ignore the target issue and the issues in the ignore list
+                continue
+
+            ret[issue.id] = issue
     
     def send_data(self, issues: list[GitIssue]):
         """
