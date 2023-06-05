@@ -77,7 +77,7 @@ jobs:
       - name: Run Issue Digest Action
         uses: Eclipse-Dominator/Github_Digest@master
           with:
-            timezome: "Singapore"
+            timezone: "Singapore"
 ```
 
 Add digest to monitor issues in another repository
@@ -99,7 +99,7 @@ jobs:
         uses: Eclipse-Dominator/Github_Digest@master
           with:
             repo: "some_owner/some_repo"
-            timezome: "Singapore"
+            timezone: "Singapore"
 ```
 
 Add digest with your own custom PAT token
