@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from git_structures import GitIssue
 from gql_queries import AddComment, UpdateIssue, MainQuery, FindRepoId, ReadLastCommentDate, CreateIssue, run_queries, run_mutations
-import helper
+import datetimehelper
 
 digest_header = """<details>
 <summary>
@@ -60,7 +60,7 @@ class DigestManager:
             additional_queries.append(
                 self.query.partial_query(
                     self.target_repo,
-                    helper.format_to_utc(self.last_update_time),
+                    datetimehelper.format_to_utc(self.last_update_time),
                     self.cursor)
             )
         res = run_queries(additional_queries)
@@ -112,12 +112,29 @@ class DigestManager:
             if not raw_issue: 
                 continue
             
-            issue = GitIssue(raw_issue, (self.last_update_time, helper.get_now()))
+            issue = GitIssue(raw_issue, (self.last_update_time, datetimehelper.get_now()))
             if issue.number in self.ignored_issues or issue.id == self.digest_issue:
                 # ignore the target issue and the issues in the ignore list
                 continue
 
             ret[issue.id] = issue
+
+    def get_default_size(self, issues: list[GitIssue]) -> int:
+        """
+        get_default_size gets the body of the issue and returns the default size without any body
+
+        args:
+            issue: GitIssue - the issue to get the body from
+        """
+        issues = [issue for issue in issues]
+        total_changes = sum([issue.total_changes for issue in issues])
+        return len(digest_header.format(
+                    time_start=datetimehelper.format_local(self.last_update_time),
+                    time_end=datetimehelper.format_local(datetimehelper.get_now()),
+                    all_changes=total_changes,
+                    issues_changed=len(issues),
+                    body=''
+                ))
     
     def send_data(self, issues: list[GitIssue]):
         """
@@ -127,7 +144,6 @@ class DigestManager:
         args:
             issues: list[GitIssue] - a list of GitIssue objects
         """
-        issues = [issue for issue in issues if issue.total_changes > 0]
         total_changes = sum([issue.total_changes for issue in issues])
         if total_changes == 0:
             # no changes were detected
@@ -135,11 +151,11 @@ class DigestManager:
 
         r1 = UpdateIssue("update_issue").partial_query(self.digest_issue, digest_content)
         r2 = AddComment("new_digest").partial_query(self.digest_issue, digest_header.format(
-                    time_start=helper.format_local(self.last_update_time),
-                    time_end=helper.format_local(helper.get_now()),
+                    time_start=datetimehelper.format_local(self.last_update_time),
+                    time_end=datetimehelper.format_local(datetimehelper.get_now()),
                     all_changes=total_changes,
                     issues_changed=len(issues),
-                    body='\n'.join([issue.to_markdown() for issue in issues])
+                    body=''.join([issue.to_markdown() for issue in issues])
                 ))
         
         run_mutations([r1, r2])
@@ -163,7 +179,7 @@ class DigestManager:
         """
         q = ReadLastCommentDate("read_last_comment")
         res = q.run(issue_id=self.digest_issue)
-        self.last_update_time = q.get_last_comment_date(res) or helper.get_n_day_prior(3)
+        self.last_update_time = q.get_last_comment_date(res) or datetimehelper.get_n_day_prior(10)
 
     def create_issue(self):
         """

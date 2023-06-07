@@ -1,6 +1,7 @@
 from datetime import datetime
 from gql_queries import ReadComments
-import helper
+from stringhelper import binary_search, build_prefix_sum, convert_comment_to_ignore_values
+import datetimehelper
 
 issue_title_template = "# {title} [#{number}]({link})\n"
 
@@ -15,7 +16,62 @@ comment_template = """
 `@{author}` {status} this [comment]({link}) on {date}
 {body}
 
+
 """
+
+class FormattedComment:
+    original: str
+    ignored_list: str
+    formatted: str
+    trimmed: str
+
+    def __init__(self, original: str):
+        self.original = original
+        self.formatted, self.ignored_list = convert_comment_to_ignore_values(original)
+        self.trimmed = self.formatted
+
+    def update_counter_arr(self, count_arr: list[int]) -> None:
+        """
+        Updates the counter array with the given size and ignores.
+        Elements inside the ignore range will be treated as a single character of that size
+        """
+        assert len(self.formatted) <= len(count_arr)
+        i = 0
+        for (start, end) in self.ignored_list:
+            for j in range(i, start):
+                count_arr[j] += 1
+            count_arr[end - 1] += end - start # this index denotes a the range of elements as a single character
+            i = end
+
+        for j in range(i, len(self.formatted)):
+            count_arr[j] += 1
+
+    def trim(self, size: int) -> None:
+        """
+        Trims the comment to the given size while accounting for the ignored ranges.
+        """
+        if (size >= self.length):
+            self.trimmed = self.formatted
+            return
+        self.trimmed = self.formatted[:self.corrected_index(size)] + "..."
+
+    @property
+    def length(self) -> int:
+        """
+        Returns the length of the formatted comment.
+        """
+        return len(self.formatted)
+
+    def corrected_index(self, index: int) -> int:
+        """
+        Corrects the index to the largest index that is not ignored.
+        """
+        for (start, end) in self.ignored_list:
+            if start <= index < end:
+                return start
+        return index
+    
+
 
 class ModifiableItem:
     """
@@ -36,9 +92,9 @@ class ModifiableItem:
     created_at: datetime
     def __init__(self, graphqlResult: dict):
         self.editor = graphqlResult["editor"]["login"] if graphqlResult["editor"] else None
-        self.edit_at = helper.convertToDateTime(graphqlResult["lastEditedAt"]) if graphqlResult["lastEditedAt"] else None
+        self.edit_at = datetimehelper.convertToDateTime(graphqlResult["lastEditedAt"]) if graphqlResult["lastEditedAt"] else None
         self.author = graphqlResult["author"]["login"]
-        self.created_at = helper.convertToDateTime(graphqlResult["createdAt"])
+        self.created_at = datetimehelper.convertToDateTime(graphqlResult["createdAt"])
 
     @property
     def is_modified(self) -> bool:
@@ -104,12 +160,12 @@ class GitComment(ModifiableItem):
     """
 
     source_link: str
-    body: str
+    body: FormattedComment
     time_range: tuple[datetime, datetime]
     def __init__(self, graphqlResult: dict, time_range: tuple[datetime, datetime]):
         super().__init__(graphqlResult)
         self.source_link = graphqlResult["url"]
-        self.body = graphqlResult["body"]
+        self.body = FormattedComment(graphqlResult["body"]) if graphqlResult["body"] else None
         self.time_range = time_range
 
     def to_markdown(self) -> str:
@@ -122,10 +178,23 @@ class GitComment(ModifiableItem):
         return comment_template.format(
                 author=self.last_change_author,
                 link=self.source_link,
-                date=helper.format_local(self.last_change_date),
-                body=helper.trim_and_format(self.body),
+                date=datetimehelper.format_local(self.last_change_date),
+                body=self.body.trimmed,
                 status=self.get_status_str(self.time_range)
             )
+
+    @property
+    def default_length(self) -> int:
+        """
+        default_length returns the default length of this comment without the body.
+        """
+        return len(comment_template.format(
+                author=self.last_change_author,
+                link=self.source_link,
+                date=datetimehelper.format_local(self.last_change_date),
+                body="...",
+                status=self.get_status_str(self.time_range)
+            ))
     
     @property
     def is_deleted(self) -> bool:
@@ -136,6 +205,7 @@ class GitComment(ModifiableItem):
             bool - true if the comment has been deleted, false otherwise
         """
         return self.body == None
+    
 
 class GitIssue(ModifiableItem):
     """
@@ -151,7 +221,7 @@ class GitIssue(ModifiableItem):
     time_range: tuple[datetime, datetime]
     title: str
     id: str
-    body: str
+    body: FormattedComment
     comments: list[GitComment]
     comments_query: ReadComments
     last_comment_cursor: str
@@ -164,7 +234,7 @@ class GitIssue(ModifiableItem):
         self.time_range = timeRange
         self.title = graphqlResult["title"]
         self.id = graphqlResult["id"]
-        self.body = graphqlResult["body"]
+        self.body = FormattedComment(graphqlResult["body"])
         self.comments = []
         self.comments_query = ReadComments(self.id)
         
@@ -184,6 +254,10 @@ class GitIssue(ModifiableItem):
     
     def draft_gql_query(self) -> str:
         return self.comments_query.partial_query(self.url, self.last_comment_cursor)
+    
+    @property
+    def contains_changes(self) -> bool:
+        return self.within_time_range(self.time_range)
 
     @property
     def has_more_data(self) -> bool:
@@ -203,7 +277,28 @@ class GitIssue(ModifiableItem):
         returns:
             int - the total number of changes of the issue
         """
-        return len(self.comments) + self.within_time_range(self.time_range)
+        return len(self.comments) + self.contains_changes
+    
+    @property
+    def default_length(self) -> int:
+        """
+        default_length returns the default length of this issue without the body.
+        """
+        ret = len(issue_title_template.format(
+            title = self.title,
+            number = self.number,
+            link = self.url))
+        
+        if self.contains_changes:
+            temp = issue_template
+            ret += len(temp.format(
+                author=self.last_change_author,
+                date=datetimehelper.format_local(self.last_change_date),
+                status=self.get_status_str(self.time_range),
+                body="..."
+            ))
+
+        return ret
     
     def to_markdown(self) -> str:
         """
@@ -216,13 +311,45 @@ class GitIssue(ModifiableItem):
             title = self.title,
             number = self.number,
             link = self.url)
-        if self.within_time_range(self.time_range):
+        if self.contains_changes:
             temp = issue_template
             header += temp.format(
                 author=self.last_change_author,
-                date=helper.format_local(self.last_change_date),
+                date=datetimehelper.format_local(self.last_change_date),
                 status=self.get_status_str(self.time_range),
-                body=helper.trim_and_format(self.body)
+                body=self.body.trimmed
             )
         self.comments.sort(key=lambda x: x.last_change_date)
-        return header + '\n'.join([comment.to_markdown() for comment in self.comments])
+        return header + ''.join([comment.to_markdown() for comment in self.comments])
+
+def fit_issues_to_size(issues: list[GitIssue], max_size: int) -> None:
+    """
+    Fits the issues to the given size by trimming the comments and issue body
+    """
+    trimmable_content: list[FormattedComment] = []
+    minimum_size = 0
+    for issue in issues:
+        minimum_size += issue.default_length
+        if (issue.contains_changes):                
+            trimmable_content.append(issue.body)
+
+        for comment in issue.comments:
+            minimum_size += comment.default_length
+            trimmable_content.append(comment.body)
+    
+    max_body_size = max_size - minimum_size
+    curr_size = sum([len(x.trimmed) for x in trimmable_content])
+    if (curr_size <= max_body_size):
+        # no need to trim
+        return
+
+    max_content_size = max([len(x.trimmed) for x in trimmable_content])
+    counter = [0] * max_content_size
+    for content in trimmable_content:
+        content.update_counter_arr(counter)
+
+    prefix_arr = build_prefix_sum(counter)
+    trimmed_size = binary_search(lambda i: prefix_arr[i] <= max_body_size, 0, max_content_size)
+
+    for content in trimmable_content:
+        content.trim(trimmed_size)

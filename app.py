@@ -2,7 +2,10 @@ import json
 from digest_manager import DigestManager
 import os
 
+from git_structures import fit_issues_to_size
+
 required_setting_fields = ["digest_issue", "ignored_issues"]
+MAX_COMMENT_SIZE = 65536
 
 lookup_repo = os.environ["GIT_REPO"]
 digest_dir = os.environ["DIGEST_SAVE_DIR"]
@@ -46,7 +49,14 @@ ql = DigestManager(
     )
 
 issues = ql.get_result()
-ql.send_data(issues)
+issues = [issue for issue in issues if issue.total_changes > 0] # remove issues that is not changed
+
+if (issues):
+    fit_issues_to_size(issues, MAX_COMMENT_SIZE - ql.get_default_size(issues))
+    ql.send_data(issues)
+else:
+    print("No changes detected, skipping digest update.")
+
 
 setting["digest_issue"] = ql.digest_issue
 setting["ignored_issues"] = ql.ignored_issues

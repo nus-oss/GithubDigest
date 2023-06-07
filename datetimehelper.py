@@ -42,17 +42,6 @@ def format_to_utc(dt: datetime) -> str:
     """
     return dt.astimezone(utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-def trim_and_format(x: str) -> str:
-    """
-    trim_and_format trims the string to 200 characters and formats it to a markdown quote.
-
-    args:
-        x: str - the string to be formatted
-    """
-    if len(x) > 200:
-        x = x[:200] + "..."
-    return ">" + x.strip().replace("\n", "\n> ")
-
 def get_n_day_prior(n: int) -> datetime:
     """
     get_n_day_prior returns the datetime object n days prior to the current time in UTC time.
@@ -64,3 +53,4 @@ def get_n_day_prior(n: int) -> datetime:
         datetime - the datetime object n days prior to the current time in UTC time
     """
     return datetime.now(utc) - timedelta(days=n)
+

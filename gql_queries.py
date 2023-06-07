@@ -1,8 +1,10 @@
+import json
 from os import environ
 from datetime import datetime
 import sys
-import helper
+import datetimehelper
 import requests
+from stringhelper import escape_special_chars
 from string import Template
 from graphql_query_templates import *
 
@@ -29,7 +31,6 @@ def handle_errors(response: requests.Response) -> None:
         exit(1)
 
     data = response.json()
-
     if 'errors' in data:
         errors = data["errors"]
         for error in errors:
@@ -49,6 +50,7 @@ def run_queries(queries: list[str]) -> dict:
     payload = {
         "query": f"{{{','.join([q for q in queries])}}}"
     }
+
     response = requests.post(url, json=payload, headers=headers)
     handle_errors(response)
     return response.json()["data"]
@@ -68,6 +70,7 @@ def run_mutations(queries: list[str]) -> dict:
     }
 
     response = requests.post(url, json=payload, headers=headers)
+
     handle_errors(response)
     return response.json()["data"]
 
@@ -138,9 +141,11 @@ class AddComment(GithubQuery):
         super().__init__(add_comment_template, id, mutation=True)
 
     def partial_query(self, issue_id:str, comment_body:str) -> str:
+        comment_body = escape_special_chars(comment_body)
         return super().partial_query(issue_id=issue_id, comment_body=comment_body)
     
     def run(self, issue_id:str, comment_body:str) -> dict:
+        comment_body = escape_special_chars(comment_body)
         return super().run(issue_id=issue_id, comment_body=comment_body)
 
 class CreateIssue(GithubQuery):
@@ -155,9 +160,13 @@ class CreateIssue(GithubQuery):
 
 
     def partial_query(self, repo_id:str, title:str, body:str) -> str:
+        title = escape_special_chars(title)
+        body = escape_special_chars(body)
         return super().partial_query(repo_id=repo_id, title=title, body=body)
     
     def run(self, repo_id:str, title:str, body:str) -> dict:
+        title = escape_special_chars(title)
+        body = escape_special_chars(body)
         return super().run(repo_id=repo_id, title=title, body=body)
     
     def get_issue_id(self, graphqlResult: dict) -> str:
@@ -195,9 +204,11 @@ class UpdateIssue(GithubQuery):
         super().__init__(update_issue_template, id)
 
     def partial_query(self, issue_id:str, issue_body:str) -> str:
+        issue_body = escape_special_chars(issue_body)
         return super().partial_query(issue_id=issue_id, issue_body=issue_body)
     
     def run(self, issue_id:str, issue_body:str) -> dict:
+        issue_body = escape_special_chars(issue_body)
         return super().run(issue_id=issue_id, issue_body=issue_body)
 
 class FindRepoId(GithubQuery):
@@ -256,7 +267,7 @@ class ReadLastCommentDate(GithubQuery):
         """
         comments = super().read_result(graphqlResult)["comments"]["nodes"]
         if len(comments):
-            return helper.convertToDateTime(comments[-1]["createdAt"])
+            return datetimehelper.convertToDateTime(comments[-1]["createdAt"])
         return None
     
 class ReadComments(GithubQuery):
