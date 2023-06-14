@@ -11,12 +11,18 @@ digest_header = """<details>
 
 {body}
 
+{additional_issues}
 </details>
 """
+
+additional_issues_template = """[details to some update were omitted due to post length limitations]
+Issues omitted: {links}"""
 
 digest_content = """
 Subscribe to this issue to receive a digest of all the issues in this repository.
 """
+
+MAX_BODY_SIZE = 65536 - 1000 # buffer for the digest header
 
 class DigestManager:
     """
@@ -87,7 +93,7 @@ class DigestManager:
                     if ret[key].has_more_data:
                         ret[key].read_paginated_comments(ret[key].comments_query.read_result(res))
         
-        return [ret[key] for key in ret]
+        return sorted([ret[key] for key in ret], key=lambda issue: issue.number)
 
     def update_cursor(self, graphqlResult: dict):
         """
@@ -133,7 +139,8 @@ class DigestManager:
                     time_end=datetimehelper.format_local(datetimehelper.get_now()),
                     all_changes=total_changes,
                     issues_changed=len(issues),
-                    body=''
+                    body='',
+                    additional_issues=''
                 ))
     
     def send_data(self, issues: list[GitIssue]):
@@ -148,6 +155,31 @@ class DigestManager:
         if total_changes == 0:
             # no changes were detected
             return
+        
+        content: list[str] = []
+        shortened_content: list[str] = []
+        curr_len = 0
+        availabe_len = MAX_BODY_SIZE - self.get_default_size(issues)
+
+        length_exceeded = False
+
+        for issue in issues:
+            if (length_exceeded):
+                shortened_content.append(issue.simple_link)
+                continue
+            content.append(issue.to_markdown())
+            curr_len += len(content[-1])
+
+            if curr_len > availabe_len:
+                content.pop()
+                shortened_content.append(issue.simple_link)
+                length_exceeded = True
+        
+        additional_issues_str = ""
+        if shortened_content:
+            additional_issues_str = additional_issues_template.format(links = ' '.join(shortened_content))
+            
+
 
         r1 = UpdateIssue("update_issue").partial_query(self.digest_issue, digest_content)
         r2 = AddComment("new_digest").partial_query(self.digest_issue, digest_header.format(
@@ -155,7 +187,8 @@ class DigestManager:
                     time_end=datetimehelper.format_local(datetimehelper.get_now()),
                     all_changes=total_changes,
                     issues_changed=len(issues),
-                    body=''.join([issue.to_markdown() for issue in issues])
+                    body=''.join(content),
+                    additional_issues=additional_issues_str
                 ))
         
         run_mutations([r1, r2])
