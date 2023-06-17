@@ -1,4 +1,4 @@
-# Github Digester @ master
+# Github Digest @ master
 
 This GitHub Action generates a summary of changes to the issues in your repository and adds the summary as a comment to a digest issue.
 It is designed to be used as a scheduled cron job to provide scheduled summaries of issue changes. Of course, it can also be called on other events as well.
@@ -22,7 +22,7 @@ To use this action in your workflow, you can add the following step:
 ```yaml
 steps:
   - name: Create digest
-    uses: nus-oss/Github_Digest@master
+    uses: nus-oss/GithubDigest@master
     with:
       secret: <github token> # default to secrets.GITHUB_TOKEN
       repo: <owner>/<repo> # repository to monitor, default to the current repo
@@ -56,7 +56,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: nus-oss/Github_Digest@master
+        uses: nus-oss/GithubDigest@master
 ```
 
 Add digest to your current repository in a different timezone
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: nus-oss/Github_Digest@master
+        uses: nus-oss/GithubDigest@master
           with:
             timezone: "Singapore"
 ```
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: nus-oss/Github_Digest@master
+        uses: nus-oss/GithubDigest@master
           with:
             repo: "some_owner/some_repo"
             timezone: "Singapore"
@@ -118,7 +118,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: nus-oss/Github_Digest@master
+        uses: nus-oss/GithubDigest@master
           with:
             secret: ${{ secrets.YOUR_SECRET_TOKEN }}
 ```
