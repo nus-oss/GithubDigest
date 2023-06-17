@@ -76,8 +76,8 @@ jobs:
     steps:
       - name: Run Issue Digest Action
         uses: nus-oss/GithubDigest@master
-          with:
-            timezone: "Singapore"
+        with:
+          timezone: "Singapore"
 ```
 
 Add digest to monitor issues in another repository
@@ -97,9 +97,9 @@ jobs:
     steps:
       - name: Run Issue Digest Action
         uses: nus-oss/GithubDigest@master
-          with:
-            repo: "some_owner/some_repo"
-            timezone: "Singapore"
+        with:
+          repo: "some_owner/some_repo"
+          timezone: "Singapore"
 ```
 
 Add digest with your own custom PAT token
@@ -119,6 +119,6 @@ jobs:
     steps:
       - name: Run Issue Digest Action
         uses: nus-oss/GithubDigest@master
-          with:
-            secret: ${{ secrets.YOUR_SECRET_TOKEN }}
+        with:
+          secret: ${{ secrets.YOUR_SECRET_TOKEN }}
 ```
