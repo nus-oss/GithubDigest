@@ -22,7 +22,7 @@ To use this action in your workflow, you can add the following step:
 ```yaml
 steps:
   - name: Create digest
-    uses: Eclipse-Dominator/Github_Digest@master
+    uses: nus-oss/Github_Digest@master
     with:
       secret: <github token> # default to secrets.GITHUB_TOKEN
       repo: <owner>/<repo> # repository to monitor, default to the current repo
@@ -56,7 +56,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: Eclipse-Dominator/Github_Digest@master
+        uses: nus-oss/Github_Digest@master
 ```
 
 Add digest to your current repository in a different timezone
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: Eclipse-Dominator/Github_Digest@master
+        uses: nus-oss/Github_Digest@master
           with:
             timezone: "Singapore"
 ```
@@ -96,7 +96,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: Eclipse-Dominator/Github_Digest@master
+        uses: nus-oss/Github_Digest@master
           with:
             repo: "some_owner/some_repo"
             timezone: "Singapore"
@@ -118,7 +118,7 @@ jobs:
 
     steps:
       - name: Run Issue Digest Action
-        uses: Eclipse-Dominator/Github_Digest@master
+        uses: nus-oss/Github_Digest@master
           with:
             secret: ${{ secrets.YOUR_SECRET_TOKEN }}
 ```
