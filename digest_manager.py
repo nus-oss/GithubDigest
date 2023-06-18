@@ -5,7 +5,7 @@ import datetimehelper
 
 digest_header = """<details>
 <summary>
-<h2>Digest Summary: {time_end}</h2>
+<h2>Digest Summary: {time_end} (timezone: {tz})</h2>
 <p>... contains {all_changes} changes across {issues_changed} issues, since {time_start}</p>
 </summary>
 
@@ -140,7 +140,8 @@ class DigestManager:
                     all_changes=total_changes,
                     issues_changed=len(issues),
                     body='',
-                    additional_issues=''
+                    additional_issues='',
+                    tz=datetimehelper.localtz.zone
                 ))
     
     def send_data(self, issues: list[GitIssue]):
@@ -188,7 +189,8 @@ class DigestManager:
                     all_changes=total_changes,
                     issues_changed=len(issues),
                     body=''.join(content),
-                    additional_issues=additional_issues_str
+                    additional_issues=additional_issues_str,
+                    tz=datetimehelper.localtz.zone
                 ))
         
         run_mutations([r1, r2])
