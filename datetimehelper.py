@@ -1,9 +1,15 @@
 from datetime import datetime, timedelta
 import pytz
+import sys
 from os import environ
 
 utc = pytz.utc
-localtz = pytz.timezone(environ["TIMEZONE"])
+
+try:
+    localtz = pytz.timezone(environ["TIMEZONE"])
+except pytz.UnknownTimeZoneError:
+    print("Unknown timezone specified, using UTC instead.", file=sys.stderr)
+    localtz = pytz.utc
 
 get_now = lambda :datetime.now(utc)
 
