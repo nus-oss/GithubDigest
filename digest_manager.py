@@ -5,8 +5,8 @@ import datetimehelper
 
 digest_header = """<details>
 <summary>
-<h2>Digest Summary: {time_end} (timezone: {tz})</h2>
-<p>... contains {all_changes} changes across {issues_changed} issues, since {time_start}</p>
+<h2>Digest Summary: {time_end}</h2>
+<p>... contains {all_changes} changes across {issues_changed} issues, since {time_start} (timezone: {tz})</p>
 </summary>
 
 {body}
