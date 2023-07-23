@@ -265,7 +265,7 @@ class DigestManager:
             return
         repo_id = self.find_repo_id()
         q = CreateIssue("create_issue")
-        res = q.run(repo_id=repo_id, title="Issues Digest", body=digest_content)
+        res = q.run(repo_id=repo_id, title=f"[{self.target_repo}] Issues Digest", body=digest_content)
 
         self.digest_issue = q.get_issue_id(res)
         if self.local_repo == self.target_repo:
