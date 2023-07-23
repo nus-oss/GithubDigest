@@ -18,9 +18,7 @@ digest_header = """<details>
 additional_issues_template = """[details to some update were omitted due to post length limitations]
 Issues omitted: {links}"""
 
-digest_content = """
-Subscribe to this issue to receive a digest of all the issues in this repository.
-"""
+digest_content = "Subscribe to this issue to receive a digest of all the issues in this repository."
 
 MAX_BODY_SIZE = 65536 - 1000 # buffer for the digest header
 
