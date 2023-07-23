@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from git_structures import GitIssue
-from gql_queries import AddComment, UpdateIssue, MainQuery, FindRepoId, ReadLastCommentDate, CreateIssue, run_queries, run_mutations
+from gql_queries import AddComment, LockIssue, ReadIssueLock, UnlockIssue, UpdateIssue, MainQuery, FindRepoId, ReadLastCommentDate, CreateIssue, run_queries, run_mutations
 import datetimehelper
 
 digest_header = """<details>
@@ -144,6 +144,45 @@ class DigestManager:
                     tz=datetimehelper.localtz.zone
                 ))
     
+    def is_locked(self):
+        """
+        is_locked checks if the digest issue is locked.
+        """
+        q = ReadIssueLock("read_issue_lock")
+        res = q.run(issue_id=self.digest_issue)
+        return q.is_locked(res)
+
+    def lock_issue(self):
+        """
+        lock_issue locks the digest issue.
+        """
+        q = LockIssue("lock_issue")
+        q.run(issue_id=self.digest_issue)
+
+    def unlock_issue(self):
+        """
+        unlock_issue unlocks the digest issue.
+        """
+        q = UnlockIssue("unlock_issue")
+        q.run(issue_id=self.digest_issue)
+
+    @staticmethod
+    def _retain_lock(func: callable):
+        """
+        decorator that retains the lock state of the digest issue.
+        """
+        def lock_wrapper(self, *args, **kwargs):
+            locked = self.is_locked()
+            if locked:
+                self.unlock_issue()
+            try:
+                func(self, *args, **kwargs)
+            finally:
+                if locked:
+                    self.lock_issue()
+        return lock_wrapper
+    
+    @_retain_lock
     def send_data(self, issues: list[GitIssue]):
         """
         send_data sends mutation to update the digest issue with the new data.

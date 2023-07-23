@@ -122,3 +122,23 @@ updateIssue(input: {id: "$issue_id", body: "$issue_body"}) {
     }
 }
 """)
+
+check_lock_state_template = Template("""
+node(id: "$issue_id") {
+  ... on Lockable {
+    locked
+  }
+}
+""")
+
+lock_issue_template = Template("""
+lockLockable(input: {lockableId: "$issue_id", lockReason: null, clientMutationId: null}) {
+    clientMutationId
+}
+""")
+
+unlock_issue_template = Template("""
+unlockLockable(input: {lockableId: "$issue_id",  clientMutationId: null} ) {
+  clientMutationId
+}
+""")
