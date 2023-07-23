@@ -12,7 +12,7 @@ curr_repo = os.environ["GITHUB_REPOSITORY"]
 if digest_dir[-1] != "/":
     digest_dir += "/"
 
-savefile = digest_dir + "digest.setting.json"
+savefile = f"{digest_dir}{'-'.join(lookup_repo.split('/'))}.digest.setting.json"
 def create_digest_setting():
     os.makedirs(digest_dir, exist_ok=True)
     with open(savefile, 'w') as f:

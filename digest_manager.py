@@ -18,9 +18,7 @@ digest_header = """<details>
 additional_issues_template = """[details to some update were omitted due to post length limitations]
 Issues omitted: {links}"""
 
-digest_content = """
-Subscribe to this issue to receive a digest of all the issues in this repository.
-"""
+digest_content = "Subscribe to this issue to receive a digest of all the issues in this repository."
 
 MAX_BODY_SIZE = 65536 - 1000 # buffer for the digest header
 
@@ -265,7 +263,7 @@ class DigestManager:
             return
         repo_id = self.find_repo_id()
         q = CreateIssue("create_issue")
-        res = q.run(repo_id=repo_id, title="Issues Digest", body=digest_content)
+        res = q.run(repo_id=repo_id, title=f"[{self.target_repo}] Issues Digest", body=digest_content)
 
         self.digest_issue = q.get_issue_id(res)
         if self.local_repo == self.target_repo:
