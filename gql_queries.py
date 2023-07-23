@@ -286,6 +286,66 @@ class ReadComments(GithubQuery):
     def run(self, url: str, cursor: str) -> str:
         return super().run(url=url, cursor=cursor)
 
+class ReadIssueLock(GithubQuery):
+    """
+    CheckLockState represents a GraphQL query to check the lock state of an issue
+
+    args:
+        id: str - the id of the query
+    """
+    def __init__(self, id: str):
+        super().__init__(check_lock_state_template, id)
+    
+    def partial_query(self, issue_id: str) -> str:
+        return super().partial_query(issue_id=issue_id)
+    
+    def run(self, issue_id: str) -> dict:
+        return super().run(issue_id=issue_id)
+    
+    def is_locked(self, graphqlResult: dict) -> bool:
+        """
+        get_locked returns whether the issue is locked
+
+        args:
+            graphqlResult: dict - the result of the query
+
+        returns:
+            bool - whether the issue is locked
+        """
+        return self.read_result(graphqlResult)["locked"]
+
+class LockIssue(GithubQuery):
+    """
+    LockIssue represents a GraphQL mutation to lock an issue
+
+    args:
+        id: str - the id of the query
+    """
+    def __init__(self, id: str):
+        super().__init__(lock_issue_template, id, mutation=True)
+    
+    def partial_query(self, issue_id: str) -> str:
+        return super().partial_query(issue_id=issue_id)
+    
+    def run(self, issue_id: str) -> dict:
+        return super().run(issue_id=issue_id)
+
+class UnlockIssue(GithubQuery):
+    """
+    LockIssue represents a GraphQL mutation to lock an issue
+
+    args:
+        id: str - the id of the query
+    """
+    def __init__(self, id: str):
+        super().__init__(unlock_issue_template, id, mutation=True)
+    
+    def partial_query(self, issue_id: str) -> str:
+        return super().partial_query(issue_id=issue_id)
+    
+    def run(self, issue_id: str) -> dict:
+        return super().run(issue_id=issue_id)
+
 class MainQuery(GithubQuery):
     """
     MainQuery represents a GraphQL query to read the issues in a repository based on update time range
@@ -302,4 +362,3 @@ class MainQuery(GithubQuery):
     
     def run(self, repo: str, timestamp: str, cursor: str = None) -> str:
         return super().run(repo=repo, timestamp=timestamp, cursor=cursor)
-    
