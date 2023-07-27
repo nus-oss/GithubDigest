@@ -1,7 +1,7 @@
 from datetime import datetime
 from gql_queries import ReadComments
 import datetimehelper
-from stringhelper import format_to_quote
+from stringhelper import format_to_quote, replace_references
 
 issue_title_template = "# {title} [#{number}]({link})\n"
 
@@ -113,7 +113,7 @@ class GitComment(ModifiableItem):
     def __init__(self, graphqlResult: dict, time_range: tuple[datetime, datetime]):
         super().__init__(graphqlResult)
         self.source_link = graphqlResult["url"]
-        self.body = graphqlResult["body"]
+        self.body = replace_references(graphqlResult["body"])
         self.time_range = time_range
 
     def to_markdown(self) -> str:
@@ -130,7 +130,7 @@ class GitComment(ModifiableItem):
                 body=format_to_quote(self.body),
                 status=self.get_status_str(self.time_range)
             )
-    
+
     @property
     def is_deleted(self) -> bool:
         """
@@ -169,7 +169,7 @@ class GitIssue(ModifiableItem):
         self.time_range = timeRange
         self.title = graphqlResult["title"]
         self.id = graphqlResult["id"]
-        self.body = graphqlResult["body"]
+        self.body = replace_references(graphqlResult["body"])
         self.comments = []
         self.comments_query = ReadComments(self.id)
         
