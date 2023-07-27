@@ -13,6 +13,13 @@ escape_trans = str.maketrans({
         '\f': '\\f'
     })
 
+def replace_references(x: str) -> str:
+    """
+    replace_references replaces all @ sign in the given string with a placeholder ＠ which will
+    not trigger Github's markdown parser to reference the actual user.
+    """
+    return x.replace("@", "＠")
+
 def format_to_quote(x: str) -> str:
     """
     format_to_quote formats the string to a markdown quote.
